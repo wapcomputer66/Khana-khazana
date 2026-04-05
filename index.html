@@ -2,11 +2,151 @@
 <html lang="hi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>खाना खजाना फैमिली रेस्टोरेन्ट - ऑर्डर करें</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>खाना खजाना | ऑनलाइन ऑर्डर (Pickup)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #fff5eb 0%, #ffe6d5 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container { max-width: 1300px; margin: 0 auto; }
+        .auth-card {
+            max-width: 450px;
+            margin: 80px auto;
+            background: rgba(255,255,255,0.95);
+            border-radius: 32px;
+            padding: 40px 30px;
+            box-shadow: 0 25px 45px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .auth-card h2 { color: #800000; }
+        .input-group { margin-bottom: 20px; text-align: left; }
+        .input-group input {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #ddd;
+            border-radius: 16px;
+        }
+        .btn-primary {
+            background: #800000;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 40px;
+            font-weight: 600;
+            width: 100%;
+            cursor: pointer;
+        }
+        .resto-header {
+            background: white;
+            border-radius: 32px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .logo h1 { color: #800000; }
+        .welcome-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: #f9f3ef;
+            padding: 8px 20px;
+            border-radius: 50px;
+        }
+        .logout-btn { background: #eee; border: none; padding: 6px 18px; border-radius: 40px; cursor: pointer; }
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 24px;
+            margin: 30px 0;
+        }
+        .menu-card {
+            background: white;
+            border-radius: 28px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        .item-name { font-weight: 700; font-size: 18px; }
+        .prices { display: flex; gap: 15px; margin: 10px 0; }
+        .price-tag { background: #f0e6e1; padding: 4px 12px; border-radius: 30px; font-size: 14px; color: #800000; }
+        .qty-selector { display: flex; gap: 15px; margin-top: 12px; flex-wrap: wrap; }
+        .selector-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f8f8f8;
+            padding: 6px 15px;
+            border-radius: 50px;
+        }
+        .qty-btn {
+            background: #800000;
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        .qty-btn.minus { background: #aaa; }
+        .qty-value { font-weight: 600; min-width: 30px; text-align: center; }
+        .cart-section {
+            background: white;
+            border-radius: 32px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        .cart-items-list { max-height: 200px; overflow-y: auto; margin-bottom: 15px; }
+        .cart-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .total-row { font-size: 20px; font-weight: 700; text-align: right; margin: 15px 0; }
+        .orders-history {
+            background: white;
+            border-radius: 32px;
+            padding: 25px;
+            margin-top: 30px;
+        }
+        .order-history-card {
+            border-left: 5px solid #f39c12;
+            margin: 15px 0;
+            padding: 15px;
+            background: #fef9f4;
+            border-radius: 20px;
+        }
+        .order-history-card.ready { border-left-color: #2ecc71; background: #e8f5e9; }
+        .order-history-card.approved { border-left-color: #3498db; background: #eaf2f8; }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-pending { background: #f39c12; color: white; }
+        .status-approved { background: #3498db; color: white; }
+        .status-ready { background: #2ecc71; color: white; }
+        .category-title {
+            font-size: 28px;
+            font-weight: 600;
+            margin: 30px 0 15px 0;
+            color: #800000;
+            border-left: 5px solid #800000;
+            padding-left: 15px;
+        }
+        @media (max-width: 700px) {
+            .resto-header { flex-direction: column; gap: 15px; text-align: center; }
+        }
+    </style>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, addDoc, query, where, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyARhEin-GkSNftXo5AwJjGkYz0Jec1RwC8",
@@ -19,9 +159,8 @@
         };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        window.db = db;
 
-        // DOM elements
+        // DOM
         const authContainer = document.getElementById('authContainer');
         const orderContainer = document.getElementById('orderContainer');
         const loginBtn = document.getElementById('loginBtn');
@@ -30,66 +169,48 @@
         const authError = document.getElementById('authError');
         const welcomeUser = document.getElementById('welcomeUser');
         const logoutBtn = document.getElementById('logoutBtn');
-
         let currentCustomer = null;
+        let unsubscribeOrders = null;
 
         loginBtn.addEventListener('click', async () => {
             const mobile = mobileInput.value.trim();
             const name = nameInput.value.trim();
-            if (!mobile || !name) {
-                authError.innerText = "कृपया मोबाइल नंबर और नाम दोनों भरें।";
-                authError.style.display = 'block';
-                return;
-            }
-            if (!/^\d{10}$/.test(mobile)) {
-                authError.innerText = "मोबाइल नंबर 10 अंकों का होना चाहिए।";
-                authError.style.display = 'block';
-                return;
-            }
+            if (!mobile || !name) { authError.innerText = "मोबाइल और नाम दोनों भरें"; authError.style.display = 'block'; return; }
+            if (!/^\d{10}$/.test(mobile)) { authError.innerText = "10 अंकों का मोबाइल नंबर डालें"; authError.style.display = 'block'; return; }
             authError.style.display = 'none';
             try {
                 const customerRef = doc(db, "customers", mobile);
-                const customerSnap = await getDoc(customerRef);
-                if (!customerSnap.exists()) {
-                    await setDoc(customerRef, { name, mobile, createdAt: new Date().toISOString(), orderCount: 0 });
-                } else {
-                    const existingName = customerSnap.data().name;
-                    if (existingName !== name) await setDoc(customerRef, { name }, { merge: true });
-                }
+                const snap = await getDoc(customerRef);
+                if (!snap.exists()) await setDoc(customerRef, { name, mobile, createdAt: new Date().toISOString() });
+                else if (snap.data().name !== name) await setDoc(customerRef, { name }, { merge: true });
                 currentCustomer = { mobile, name };
                 localStorage.setItem('khanaCustomer', JSON.stringify(currentCustomer));
                 showOrderPage();
-            } catch (err) {
-                console.error(err);
-                authError.innerText = "सर्वर त्रुटि। कृपया बाद में प्रयास करें।";
-                authError.style.display = 'block';
-            }
+            } catch(e) { authError.innerText = "सर्वर त्रुटि"; authError.style.display = 'block'; }
         });
 
         logoutBtn.addEventListener('click', () => {
             localStorage.removeItem('khanaCustomer');
+            if (unsubscribeOrders) unsubscribeOrders();
             currentCustomer = null;
             orderContainer.style.display = 'none';
             authContainer.style.display = 'block';
-            mobileInput.value = '';
-            nameInput.value = '';
         });
 
         function checkAutoLogin() {
             const saved = localStorage.getItem('khanaCustomer');
-            if (saved) {
-                try { currentCustomer = JSON.parse(saved); showOrderPage(); } catch(e) {}
-            }
+            if (saved) { currentCustomer = JSON.parse(saved); showOrderPage(); }
         }
 
         function showOrderPage() {
             authContainer.style.display = 'none';
             orderContainer.style.display = 'block';
-            welcomeUser.innerText = `स्वागत है, ${currentCustomer.name} (${currentCustomer.mobile})`;
+            welcomeUser.innerText = `${currentCustomer.name} (${currentCustomer.mobile})`;
             initOrderSystem();
+            loadCustomerOrders();
         }
 
-        // ---------- Complete Menu (41 items from your HTML) ----------
+        // Menu data (same 41 items)
         const menuItems = [
             { name: "मटन बिरयानी", fullPrice: 210, halfPrice: 120, category: "बिरयानी और स्टार्टर" },
             { name: "चिकन दम बिरयानी", fullPrice: 130, halfPrice: 80, category: "बिरयानी और स्टार्टर" },
@@ -134,82 +255,114 @@
             { name: "स्पेशल चावल थाली", fullPrice: 90, halfPrice: null, category: "रोटी और चावल" }
         ];
 
+        let cart = [];
         function initOrderSystem() {
-            buildMenu();
-            attachEvents();
+            buildMenuWithSelectors();
             document.getElementById('placeOrderBtn').addEventListener('click', placeOrder);
         }
 
-        function buildMenu() {
-            let currentCat = "";
-            let html = '<table id="menuTable"><thead><tr><th>आइटम</th><th>फुल (₹)</th><th>हाफ (₹)</th><th>Full मात्रा</th><th>Half मात्रा</th></tr></thead><tbody>';
+        function buildMenuWithSelectors() {
+            const container = document.getElementById('menuGrid');
+            container.innerHTML = '';
+            let currentCat = '';
             menuItems.forEach(item => {
                 if (item.category !== currentCat) {
                     currentCat = item.category;
-                    html += `<tr class="cat"><td colspan="5">${currentCat}</td></tr>`;
+                    const catDiv = document.createElement('div');
+                    catDiv.className = 'category-title';
+                    catDiv.innerText = currentCat;
+                    container.appendChild(catDiv);
                 }
-                html += `<tr>
-                    <td>${item.name}</td>
-                    <td class="p-center">${item.fullPrice}${item.unit ? `/${item.unit}` : ''}</td>
-                    <td class="p-center">${item.halfPrice ? item.halfPrice : '—'}</td>
-                    <td><input type="number" min="0" value="0" class="qty-full" data-name="${item.name}" data-price="${item.fullPrice}" data-type="full"></td>
-                    <td><input type="number" min="0" value="0" class="qty-half" data-name="${item.name}" data-price="${item.halfPrice || 0}" data-type="half" ${!item.halfPrice ? 'disabled' : ''}></td>
-                </tr>`;
+                const card = document.createElement('div');
+                card.className = 'menu-card';
+                card.setAttribute('data-name', item.name);
+                let fullSelector = '', halfSelector = '';
+                if (item.fullPrice) {
+                    fullSelector = `
+                        <div class="selector-group">
+                            <span>Full</span>
+                            <button class="qty-btn minus" data-item="${item.name}" data-type="full">−</button>
+                            <span class="qty-value" id="qty-${item.name.replace(/\s/g, '')}-full">0</span>
+                            <button class="qty-btn plus" data-item="${item.name}" data-type="full">+</button>
+                        </div>
+                    `;
+                }
+                if (item.halfPrice) {
+                    halfSelector = `
+                        <div class="selector-group">
+                            <span>Half</span>
+                            <button class="qty-btn minus" data-item="${item.name}" data-type="half">−</button>
+                            <span class="qty-value" id="qty-${item.name.replace(/\s/g, '')}-half">0</span>
+                            <button class="qty-btn plus" data-item="${item.name}" data-type="half">+</button>
+                        </div>
+                    `;
+                }
+                card.innerHTML = `
+                    <div class="item-name">${item.name}</div>
+                    <div class="prices">
+                        ${item.fullPrice ? `<span class="price-tag">Full: ₹${item.fullPrice}${item.unit ? `/${item.unit}` : ''}</span>` : ''}
+                        ${item.halfPrice ? `<span class="price-tag">Half: ₹${item.halfPrice}</span>` : ''}
+                    </div>
+                    <div class="qty-selector">${fullSelector}${halfSelector}</div>
+                `;
+                container.appendChild(card);
             });
-            html += '</tbody></table>';
-            document.getElementById('menuContainer').innerHTML = html;
+            document.querySelectorAll('.qty-btn.plus').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const itemName = btn.dataset.item;
+                    const type = btn.dataset.type;
+                    changeQuantity(itemName, type, 1);
+                });
+            });
+            document.querySelectorAll('.qty-btn.minus').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const itemName = btn.dataset.item;
+                    const type = btn.dataset.type;
+                    changeQuantity(itemName, type, -1);
+                });
+            });
         }
 
-        function attachEvents() {
-            document.querySelectorAll('.qty-full, .qty-half').forEach(inp => {
-                inp.addEventListener('input', updateCart);
-            });
-            updateCart();
+        function changeQuantity(itemName, type, delta) {
+            const menuItem = menuItems.find(i => i.name === itemName);
+            if (!menuItem) return;
+            const price = type === 'full' ? menuItem.fullPrice : menuItem.halfPrice;
+            if (!price) return;
+            let existing = cart.find(i => i.name === itemName && i.type === type);
+            let newQty = existing ? existing.qty + delta : (delta === 1 ? 1 : 0);
+            if (newQty < 0) newQty = 0;
+            if (newQty === 0) {
+                cart = cart.filter(i => !(i.name === itemName && i.type === type));
+            } else {
+                if (existing) {
+                    existing.qty = newQty;
+                    existing.itemTotal = newQty * price;
+                } else {
+                    cart.push({ name: itemName, type, qty: newQty, price, itemTotal: newQty * price });
+                }
+            }
+            const counterSpan = document.getElementById(`qty-${itemName.replace(/\s/g, '')}-${type}`);
+            if (counterSpan) counterSpan.innerText = newQty;
+            updateCartDisplay();
         }
 
-        let cart = [];
-        function updateCart() {
-            cart = [];
+        function updateCartDisplay() {
+            const cartDiv = document.getElementById('cartItemsList');
             let total = 0;
-            document.querySelectorAll('.qty-full').forEach(inp => {
-                let qty = parseInt(inp.value);
-                if (qty > 0) {
-                    let name = inp.dataset.name;
-                    let price = parseFloat(inp.dataset.price);
-                    let itemTotal = qty * price;
-                    total += itemTotal;
-                    cart.push({ name, type: "Full", qty, price, itemTotal });
-                }
-            });
-            document.querySelectorAll('.qty-half').forEach(inp => {
-                let qty = parseInt(inp.value);
-                if (qty > 0 && inp.dataset.price != 0) {
-                    let name = inp.dataset.name;
-                    let price = parseFloat(inp.dataset.price);
-                    let itemTotal = qty * price;
-                    total += itemTotal;
-                    cart.push({ name, type: "Half", qty, price, itemTotal });
-                }
-            });
-            const cartDiv = document.getElementById('cartItems');
-            if (cart.length === 0) cartDiv.innerHTML = '<p>कोई आइटम नहीं चुना</p>';
-            else {
-                let html = '<ul>';
-                cart.forEach(i => html += `<li>${i.name} (${i.type}) x${i.qty} = ₹${i.itemTotal}</li>`);
-                html += '</ul>';
-                cartDiv.innerHTML = html;
+            if (cart.length === 0) {
+                cartDiv.innerHTML = '<div class="cart-item">कोई आइटम नहीं चुना</div>';
+            } else {
+                cartDiv.innerHTML = cart.map(i => `<div class="cart-item"><span>${i.name} (${i.type}) x${i.qty}</span><span>₹${i.itemTotal}</span></div>`).join('');
+                total = cart.reduce((sum, i) => sum + i.itemTotal, 0);
             }
             document.getElementById('totalPrice').innerText = total;
         }
 
         async function placeOrder() {
-            if (cart.length === 0) { alert("कृपया कोई आइटम चुनें।"); return; }
-            const address = document.getElementById('custAddress').value.trim();
-            if (!address) { alert("कृपया पता भरें।"); return; }
+            if (cart.length === 0) { alert("कृपया कोई आइटम चुनें"); return; }
             const orderData = {
                 customerMobile: currentCustomer.mobile,
                 customerName: currentCustomer.name,
-                customerAddress: address,
                 items: cart,
                 total: parseFloat(document.getElementById('totalPrice').innerText),
                 status: "pending",
@@ -217,71 +370,83 @@
             };
             try {
                 await addDoc(collection(db, "orders"), orderData);
-                alert("✅ ऑर्डर सफलतापूर्वक भेज दिया गया! मैनेजर अप्रूवल का इंतज़ार करें।");
-                document.querySelectorAll('.qty-full, .qty-half').forEach(inp => inp.value = 0);
-                document.getElementById('custAddress').value = '';
-                updateCart();
-            } catch(err) {
-                console.error(err);
-                alert("❌ ऑर्डर भेजने में त्रुटि। कृपया बाद में प्रयास करें।");
-            }
+                alert("✅ ऑर्डर भेज दिया गया! ऑर्डर की स्थिति नीचे देखें।");
+                cart = [];
+                document.querySelectorAll('.qty-value').forEach(span => span.innerText = '0');
+                updateCartDisplay();
+                // Reload orders list automatically (real-time listener will update)
+            } catch(e) { alert("त्रुटि: " + e.message); }
+        }
+
+        async function loadCustomerOrders() {
+            if (unsubscribeOrders) unsubscribeOrders();
+            const q = query(collection(db, "orders"), where("customerMobile", "==", currentCustomer.mobile));
+            unsubscribeOrders = onSnapshot(q, (snapshot) => {
+                const ordersDiv = document.getElementById('ordersList');
+                if (snapshot.empty) {
+                    ordersDiv.innerHTML = '<p>अभी कोई ऑर्डर नहीं</p>';
+                    return;
+                }
+                let html = '';
+                snapshot.forEach(docSnap => {
+                    const order = docSnap.data();
+                    const orderId = docSnap.id.slice(-6);
+                    let statusClass = '', statusText = '';
+                    if (order.status === 'pending') { statusClass = 'status-pending'; statusText = 'Pending Approval'; }
+                    else if (order.status === 'approved') { statusClass = 'status-approved'; statusText = 'Approved - Being Prepared'; }
+                    else if (order.status === 'ready') { statusClass = 'status-ready'; statusText = '✅ Ready for Pickup!'; }
+                    else { statusText = order.status; }
+                    const itemsHtml = order.items.map(i => `<li>${i.name} (${i.type}) x${i.qty} = ₹${i.itemTotal}</li>`).join('');
+                    html += `
+                        <div class="order-history-card ${order.status}">
+                            <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+                                <strong>Order #${orderId}</strong>
+                                <span class="status-badge ${statusClass}">${statusText}</span>
+                            </div>
+                            <div style="margin-top: 8px;"><strong>Items:</strong>
+                                <ul style="margin-left: 20px;">${itemsHtml}</ul>
+                            </div>
+                            <div style="text-align: right; font-weight: bold;">Total: ₹${order.total}</div>
+                            <div style="font-size: 12px; color: #888;">${new Date(order.createdAt).toLocaleString()}</div>
+                        </div>
+                    `;
+                });
+                ordersDiv.innerHTML = html;
+            });
         }
 
         checkAutoLogin();
     </script>
-    <style>
-        * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #fffaf0; margin: 0; padding: 20px; }
-        .container { max-width: 1200px; margin: auto; background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .auth-box { max-width: 400px; margin: 80px auto; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; }
-        input, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
-        button { background: #800000; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.2s; }
-        button:hover { background: #a00000; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; vertical-align: middle; }
-        th { background: #800000; color: white; }
-        .cat { background: #f2dede; font-weight: bold; text-align: center; }
-        .qty-full, .qty-half { width: 80px; padding: 6px; text-align: center; }
-        .cart-summary { margin-top: 25px; border-top: 2px solid #800000; padding-top: 15px; }
-        #logoutBtn { background: #555; margin-bottom: 20px; }
-        .welcome-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
-        @media (max-width: 768px) {
-            table, thead, tbody, th, td, tr { display: block; }
-            th { display: none; }
-            td { display: flex; justify-content: space-between; align-items: center; border: none; border-bottom: 1px solid #eee; }
-            td:before { content: attr(data-label); font-weight: bold; width: 40%; }
-            .qty-full, .qty-half { width: 70px; }
-        }
-    </style>
 </head>
 <body>
-    <div id="authContainer" class="auth-box">
+<div class="container">
+    <div id="authContainer" class="auth-card">
         <h2>🍽️ खाना खजाना</h2>
-        <p>ऑर्डर करने के लिए साइनअप करें</p>
-        <input type="text" id="mobile" placeholder="मोबाइल नंबर (10 अंक)" maxlength="10">
-        <input type="text" id="fullname" placeholder="पूरा नाम">
-        <button id="loginBtn">लॉगिन / साइनअप</button>
-        <p id="authError" style="color:red; display:none; margin-top:10px;"></p>
+        <p>ऑर्डर करें और रेस्टोरेंट से पिकअप करें</p>
+        <div class="input-group"><label>मोबाइल नंबर</label><input type="text" id="mobile" placeholder="10 अंक" maxlength="10"></div>
+        <div class="input-group"><label>पूरा नाम</label><input type="text" id="fullname" placeholder="जैसे: राम कुमार"></div>
+        <button id="loginBtn" class="btn-primary">लॉगिन / साइनअप</button>
+        <p id="authError" style="color:red; display:none; margin-top:15px;"></p>
     </div>
+
     <div id="orderContainer" style="display:none;">
-        <div class="container">
-            <h1 style="color:#800000; text-align:center;">🍽️ खाना खजाना फैमिली रेस्टोरेन्ट</h1>
-            <p style="text-align:center; color:#555;">मेन रोड, सिंहवाड़ा</p>
-            <div class="welcome-bar">
-                <span id="welcomeUser" style="font-weight: bold;"></span>
-                <button id="logoutBtn">लॉगआउट</button>
-            </div>
-            <div id="menuContainer"></div>
-            <div class="cart-summary">
-                <h3>🛒 आपका ऑर्डर</h3>
-                <div id="cartItems"></div>
-                <p><strong>कुल: ₹<span id="totalPrice">0</span></strong></p>
-            </div>
-            <div style="margin-top: 20px;">
-                <textarea id="custAddress" rows="3" placeholder="पता (मकान नंबर, गली, शहर) *" required></textarea>
-                <button id="placeOrderBtn" style="width:100%; margin-top:15px;">✅ ऑर्डर करें</button>
-            </div>
+        <div class="resto-header">
+            <div class="logo"><h1>खाना खजाना</h1><p>सिंहवाड़ा (Pickup Only)</p></div>
+            <div class="welcome-section"><span id="welcomeUser"></span><button id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
         </div>
+        <div id="menuGrid" class="menu-grid"></div>
+        <div class="cart-section">
+            <div class="cart-title"><i class="fas fa-shopping-cart"></i> आपका ऑर्डर</div>
+            <div id="cartItemsList" class="cart-items-list"></div>
+            <div class="total-row">कुल: ₹<span id="totalPrice">0</span></div>
+            <button id="placeOrderBtn" class="btn-primary"><i class="fas fa-check-circle"></i> ऑर्डर करें (Pickup)</button>
+        </div>
+        <div class="orders-history">
+            <h3><i class="fas fa-history"></i> मेरे ऑर्डर</h3>
+            <div id="ordersList"></div>
+        </div>
+        <footer>© खाना खजाना | कृपया ऑर्डर ready होने पर restaurant से pickup करें</footer>
     </div>
+</div>
 </body>
 </html>

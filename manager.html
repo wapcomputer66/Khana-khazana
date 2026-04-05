@@ -3,7 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manager Dashboard - खाना खजाना</title>
+    <title>Manager Dashboard | खाना खजाना</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f1f5f9;
+            padding: 24px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .login-card {
+            max-width: 420px;
+            margin: 100px auto;
+            background: white;
+            border-radius: 36px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .login-card input {
+            width: 100%;
+            padding: 14px;
+            margin: 12px 0;
+            border: 1px solid #cbd5e1;
+            border-radius: 24px;
+        }
+        .login-card button {
+            background: #0f172a;
+            color: white;
+            width: 100%;
+            padding: 14px;
+            border-radius: 40px;
+            border: none;
+            font-weight: 600;
+        }
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 16px 28px;
+            border-radius: 40px;
+            margin-bottom: 30px;
+        }
+        .sound-control { display: flex; gap: 12px; align-items: center; }
+        .enable-sound, .logout-dash {
+            padding: 8px 20px;
+            border-radius: 30px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .enable-sound { background: #3b82f6; color: white; }
+        .logout-dash { background: #ef4444; color: white; }
+        .orders-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 28px;
+        }
+        .order-column {
+            background: white;
+            border-radius: 28px;
+            padding: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+        }
+        .column-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #e2e8f0;
+            padding-bottom: 12px;
+        }
+        .order-card {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 18px;
+            margin-bottom: 16px;
+            border-left: 6px solid #f59e0b;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        }
+        .order-card.approved { border-left-color: #3498db; }
+        .order-card.ready { border-left-color: #2ecc71; background: #e8f5e9; }
+        .order-id { font-weight: 700; }
+        .customer-details { margin: 10px 0; color: #475569; }
+        .items-list { background: #f8fafc; border-radius: 16px; padding: 12px; margin: 12px 0; font-size: 14px; }
+        .total-amount { font-weight: 800; font-size: 18px; text-align: right; }
+        .action-buttons { display: flex; gap: 12px; margin-top: 15px; flex-wrap: wrap; }
+        .approve-btn { background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 40px; cursor: pointer; }
+        .reject-btn { background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 40px; cursor: pointer; }
+        .ready-btn { background: #f59e0b; color: white; border: none; padding: 8px 16px; border-radius: 40px; cursor: pointer; }
+        @media (max-width: 1000px) { .orders-grid { grid-template-columns: 1fr; } }
+    </style>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -22,184 +113,160 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // DOM
         const loginDiv = document.getElementById('loginSection');
         const dashboardDiv = document.getElementById('dashboardSection');
         const pendingContainer = document.getElementById('pendingOrders');
         const approvedContainer = document.getElementById('approvedOrders');
-        const logoutBtn = document.getElementById('logoutBtn');
+        const readyContainer = document.getElementById('readyOrders');
         const loginBtn = document.getElementById('loginBtn');
-        const loginError = document.getElementById('loginError');
+        const logoutBtn = document.getElementById('logoutBtn');
         const enableSoundBtn = document.getElementById('enableSoundBtn');
         const soundStatus = document.getElementById('soundStatus');
-
-        let audioEnabled = false;
-        let audioContext = null;
+        let audioEnabled = false, audioContext = null;
         let lastOrderIds = new Set();
 
         function playBeep() {
             if (!audioEnabled) return;
             try {
                 if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioContext.createOscillator();
+                const osc = audioContext.createOscillator();
                 const gain = audioContext.createGain();
-                oscillator.connect(gain);
+                osc.connect(gain);
                 gain.connect(audioContext.destination);
-                oscillator.frequency.value = 880;
+                osc.frequency.value = 880;
                 gain.gain.value = 0.3;
-                oscillator.type = "sine";
-                oscillator.start();
+                osc.type = "sine";
+                osc.start();
                 gain.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.5);
-                oscillator.stop(audioContext.currentTime + 0.5);
+                osc.stop(audioContext.currentTime + 0.5);
                 if (audioContext.state === 'suspended') audioContext.resume();
-            } catch(e) { console.warn(e); }
+            } catch(e) {}
         }
-
-        function showBrowserNotification(orderId, customerName) {
-            if (!("Notification" in window)) return;
+        function showNotification(orderId, name) {
             if (Notification.permission === "granted") {
-                new Notification("🍽️ नया ऑर्डर आया!", { body: `Order #${orderId.slice(-6)} from ${customerName}` });
-            } else if (Notification.permission !== "denied") {
-                Notification.requestPermission();
-            }
+                new Notification("🍽️ नया ऑर्डर!", { body: `Order #${orderId.slice(-6)} from ${name}` });
+            } else if (Notification.permission !== "denied") Notification.requestPermission();
         }
-
         enableSoundBtn.addEventListener('click', () => {
             if (!audioEnabled) {
-                if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                if (!audioContext) audioContext = new AudioContext();
                 audioContext.resume().then(() => {
                     audioEnabled = true;
-                    soundStatus.innerText = "✅ Sound enabled! New orders will play a beep.";
-                    soundStatus.style.color = "green";
+                    soundStatus.innerText = "✅ Sound active";
                     enableSoundBtn.style.display = "none";
-                    playBeep(); // test
-                }).catch(e => { soundStatus.innerText = "❌ Could not enable sound. Click again."; });
+                    playBeep();
+                });
             }
         });
-
         loginBtn.addEventListener('click', () => {
             const email = document.getElementById('managerEmail').value;
-            const password = document.getElementById('managerPassword').value;
-            signInWithEmailAndPassword(auth, email, password)
-                .then(() => loginError.style.display = 'none')
-                .catch(() => { loginError.style.display = 'block'; loginError.innerText = "Invalid email or password"; });
+            const pass = document.getElementById('managerPassword').value;
+            signInWithEmailAndPassword(auth, email, pass).catch(() => alert("Invalid login"));
         });
-
         logoutBtn.addEventListener('click', () => signOut(auth));
-
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 loginDiv.style.display = 'none';
                 dashboardDiv.style.display = 'block';
-                loadRealTimeOrders();
+                loadOrders();
             } else {
                 dashboardDiv.style.display = 'none';
                 loginDiv.style.display = 'block';
-                audioEnabled = false;
-                if (audioContext) audioContext.close();
-                audioContext = null;
-                lastOrderIds.clear();
-                soundStatus.innerText = "🔊 Click 'Enable Sound' for new order alerts";
-                soundStatus.style.color = "#555";
+                audioEnabled = false; if(audioContext) audioContext.close(); audioContext=null;
+                soundStatus.innerText = "🔊 Enable sound";
                 enableSoundBtn.style.display = "inline-block";
             }
         });
-
-        let unsubPending = null;
-        function loadRealTimeOrders() {
-            if (unsubPending) unsubPending();
-            const qPending = query(collection(db, "orders"), where("status", "==", "pending"));
-            unsubPending = onSnapshot(qPending, (snapshot) => {
-                const currentIds = new Set();
-                snapshot.forEach(docSnap => currentIds.add(docSnap.id));
-                for (let id of currentIds) {
+        let unsub;
+        function loadOrders() {
+            if (unsub) unsub();
+            const q = query(collection(db, "orders"));
+            unsub = onSnapshot(q, (snapshot) => {
+                const pending = [], approved = [], ready = [];
+                snapshot.forEach(docSnap => {
+                    const order = docSnap.data();
+                    order.id = docSnap.id;
+                    if (order.status === 'pending') pending.push(order);
+                    else if (order.status === 'approved') approved.push(order);
+                    else if (order.status === 'ready') ready.push(order);
+                });
+                // Sound for new pending orders
+                const newPendingIds = pending.map(o => o.id);
+                for (let id of newPendingIds) {
                     if (!lastOrderIds.has(id)) {
-                        const orderData = snapshot.docs.find(d => d.id === id)?.data();
-                        if (orderData) { playBeep(); showBrowserNotification(id, orderData.customerName); }
+                        const newOrder = pending.find(o => o.id === id);
+                        if (newOrder) { playBeep(); showNotification(id, newOrder.customerName); }
                     }
                 }
-                lastOrderIds = currentIds;
-                pendingContainer.innerHTML = '';
-                if (snapshot.empty) pendingContainer.innerHTML = '<p>✅ कोई pending ऑर्डर नहीं है।</p>';
-                else snapshot.forEach(docSnap => {
-                    pendingContainer.appendChild(createOrderCard(docSnap.id, docSnap.data(), true));
-                });
-            });
-            const qOthers = query(collection(db, "orders"), where("status", "in", ["approved", "rejected"]));
-            onSnapshot(qOthers, (snapshot) => {
-                approvedContainer.innerHTML = '';
-                snapshot.forEach(docSnap => {
-                    approvedContainer.appendChild(createOrderCard(docSnap.id, docSnap.data(), false));
-                });
+                lastOrderIds = new Set(newPendingIds);
+                renderOrders(pending, approved, ready);
             });
         }
-
-        function createOrderCard(id, order, showActions) {
-            const div = document.createElement('div');
-            div.className = `order-card ${order.status}`;
+        function renderOrders(pending, approved, ready) {
+            pendingContainer.innerHTML = pending.map(order => createOrderCard(order, 'pending')).join('');
+            approvedContainer.innerHTML = approved.map(order => createOrderCard(order, 'approved')).join('');
+            readyContainer.innerHTML = ready.map(order => createOrderCard(order, 'ready')).join('');
+            // Attach events dynamically
+            document.querySelectorAll('.approve-btn').forEach(btn => btn.addEventListener('click', () => updateStatus(btn.dataset.id, 'approved')));
+            document.querySelectorAll('.reject-btn').forEach(btn => btn.addEventListener('click', () => updateStatus(btn.dataset.id, 'rejected')));
+            document.querySelectorAll('.ready-btn').forEach(btn => btn.addEventListener('click', () => updateStatus(btn.dataset.id, 'ready')));
+        }
+        function createOrderCard(order, stage) {
             const itemsHtml = order.items.map(i => `<li>${i.name} (${i.type}) x${i.qty} = ₹${i.itemTotal}</li>`).join('');
-            div.innerHTML = `
-                <div><strong>Order #${id.slice(-6)}</strong> | ${new Date(order.createdAt).toLocaleString()}</div>
-                <div><strong>Customer:</strong> ${order.customerName} (${order.customerMobile})</div>
-                <div><strong>Address:</strong> ${order.customerAddress}</div>
-                <div><strong>Items:</strong><ul>${itemsHtml}</ul></div>
-                <div><strong>Total: ₹${order.total}</strong></div>
-                ${showActions ? `<div class="actions"><button class="approveBtn" data-id="${id}">✅ Approve</button> <button class="rejectBtn" data-id="${id}">❌ Reject</button></div>` : `<div><strong>Status:</strong> ${order.status === 'approved' ? '✅ Approved' : '❌ Rejected'}</div>`}
-            `;
-            if (showActions) {
-                div.querySelector('.approveBtn').addEventListener('click', () => updateStatus(id, 'approved'));
-                div.querySelector('.rejectBtn').addEventListener('click', () => updateStatus(id, 'rejected'));
+            let actions = '';
+            if (stage === 'pending') {
+                actions = `<div class="action-buttons"><button class="approve-btn" data-id="${order.id}">✅ Approve</button><button class="reject-btn" data-id="${order.id}">❌ Reject</button></div>`;
+            } else if (stage === 'approved') {
+                actions = `<div class="action-buttons"><button class="ready-btn" data-id="${order.id}">🟠 Mark Ready for Pickup</button></div>`;
+            } else {
+                actions = `<div style="margin-top:12px;"><i class="fas fa-check-circle"></i> Customer can pickup now</div>`;
             }
-            return div;
+            return `
+                <div class="order-card ${order.status}">
+                    <div class="order-id"><i class="fas fa-receipt"></i> Order #${order.id.slice(-6)} | ${new Date(order.createdAt).toLocaleString()}</div>
+                    <div class="customer-details"><i class="fas fa-user"></i> ${order.customerName} (${order.customerMobile})</div>
+                    <div class="items-list"><ul style="margin-left:20px;">${itemsHtml}</ul></div>
+                    <div class="total-amount">₹${order.total}</div>
+                    ${actions}
+                </div>
+            `;
         }
-
         async function updateStatus(orderId, newStatus) {
-            try {
-                await updateDoc(doc(db, "orders", orderId), { status: newStatus });
-            } catch (err) { console.error(err); alert("Status update failed!"); }
+            await updateDoc(doc(db, "orders", orderId), { status: newStatus });
         }
     </script>
-    <style>
-        body { font-family: 'Segoe UI', Arial; background: #f4f4f4; margin: 0; padding: 20px; }
-        .container { max-width: 1000px; margin: auto; }
-        .login-box { background: white; padding: 30px; border-radius: 16px; max-width: 400px; margin: 100px auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; }
-        .login-box input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; }
-        .login-box button { background: #800000; color: white; padding: 12px; width: 100%; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .order-card { background: white; margin: 15px 0; padding: 15px; border-left: 6px solid #f39c12; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
-        .order-card.approved { border-left-color: #2ecc71; background: #e8f5e9; }
-        .order-card.rejected { border-left-color: #e74c3c; background: #ffebee; }
-        button.approveBtn { background: #2e7d32; color: white; border: none; padding: 8px 16px; margin-right: 10px; border-radius: 6px; cursor: pointer; }
-        button.rejectBtn { background: #c62828; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
-        #logoutBtn { background: #555; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; margin-bottom: 20px; }
-        h2 { color: #800000; border-bottom: 2px solid #800000; display: inline-block; }
-        .actions { margin-top: 12px; }
-        .sound-bar { background: #f0f0f0; padding: 10px 15px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
-        #enableSoundBtn { background: #2196F3; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        #soundStatus { font-size: 14px; color: #555; }
-    </style>
 </head>
 <body>
 <div class="container">
-    <div id="loginSection" class="login-box">
+    <div id="loginSection" class="login-card">
         <h2>Manager Login</h2>
-        <input type="email" id="managerEmail" placeholder="Email" autocomplete="off">
+        <input type="email" id="managerEmail" placeholder="Email">
         <input type="password" id="managerPassword" placeholder="Password">
         <button id="loginBtn">Login</button>
-        <p id="loginError" style="color:red; display:none; margin-top:10px;"></p>
     </div>
     <div id="dashboardSection" style="display:none;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h1>📋 खाना खजाना - Manager Dashboard</h1>
-            <button id="logoutBtn">Logout</button>
+        <div class="dashboard-header">
+            <h1><i class="fas fa-utensils"></i> खाना खजाना Manager</h1>
+            <div class="sound-control">
+                <span id="soundStatus">🔊 Enable sound</span>
+                <button id="enableSoundBtn" class="enable-sound"><i class="fas fa-volume-up"></i> Enable</button>
+                <button id="logoutBtn" class="logout-dash"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
         </div>
-        <div class="sound-bar">
-            <button id="enableSoundBtn">🔊 Enable Sound & Notifications</button>
-            <span id="soundStatus">Click to enable sound for new orders</span>
+        <div class="orders-grid">
+            <div class="order-column">
+                <div class="column-title"><i class="fas fa-clock"></i> Pending Orders</div>
+                <div id="pendingOrders"></div>
+            </div>
+            <div class="order-column">
+                <div class="column-title"><i class="fas fa-spinner"></i> Approved (Cooking)</div>
+                <div id="approvedOrders"></div>
+            </div>
+            <div class="order-column">
+                <div class="column-title"><i class="fas fa-check-double"></i> Ready for Pickup</div>
+                <div id="readyOrders"></div>
+            </div>
         </div>
-        <h2>⏳ Pending Orders</h2>
-        <div id="pendingOrders"></div>
-        <h2>✅ Approved / Rejected Orders</h2>
-        <div id="approvedOrders"></div>
     </div>
 </div>
 </body>
