@@ -3,26 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>खाना खजाना | ऑनलाइन ऑर्डर</title>
+    <title>खाना खजाना | कस्टमर लॉगिन</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* Same styles as before, plus offline banner */
-        .offline-banner {
-            background: #ff4757;
-            color: white;
-            text-align: center;
-            padding: 12px;
-            border-radius: 16px;
-            margin-bottom: 20px;
-            font-weight: 600;
-        }
-        .item-disabled {
-            opacity: 0.6;
-            pointer-events: none;
-            filter: grayscale(0.2);
-        }
-        /* rest of styles remain same */
+        /* Same styles as before - keep your existing CSS */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #fff5eb 0%, #ffe6d5 100%); padding: 20px; min-height: 100vh; }
         .container { max-width: 1300px; margin: 0 auto; }
@@ -31,12 +16,16 @@
         .input-group { margin-bottom: 20px; text-align: left; }
         .input-group input { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 16px; font-size: 16px; }
         .btn-primary { background: #800000; color: white; border: none; padding: 14px; border-radius: 40px; font-weight: 600; width: 100%; cursor: pointer; }
+        .btn-secondary { background: #6c757d; color: white; border: none; padding: 10px; border-radius: 40px; width: 100%; cursor: pointer; margin-top: 10px; }
+        .back-link { background: none; border: none; color: #800000; cursor: pointer; margin-top: 15px; }
+        .error-msg { color: red; font-size: 13px; margin-top: 5px; display: none; }
+        .offline-banner { background: #ff4757; color: white; text-align: center; padding: 12px; border-radius: 16px; margin-bottom: 20px; font-weight: 600; }
         .resto-header { background: white; border-radius: 32px; padding: 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
         .logo h1 { color: #800000; }
         .welcome-section { display: flex; align-items: center; gap: 15px; background: #f9f3ef; padding: 8px 20px; border-radius: 50px; }
         .logout-btn { background: #eee; border: none; padding: 6px 18px; border-radius: 40px; cursor: pointer; }
         .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 24px; margin: 30px 0; }
-        .menu-card { background: white; border-radius: 28px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); transition: 0.2s; }
+        .menu-card { background: white; border-radius: 28px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
         .item-name { font-weight: 700; font-size: 18px; }
         .prices { display: flex; gap: 15px; margin: 10px 0; }
         .price-tag { background: #f0e6e1; padding: 4px 12px; border-radius: 30px; font-size: 14px; color: #800000; }
@@ -52,7 +41,6 @@
         .orders-history { background: white; border-radius: 32px; padding: 25px; margin-top: 30px; }
         .order-history-card { border-left: 5px solid #f39c12; margin: 15px 0; padding: 15px; background: #fef9f4; border-radius: 20px; }
         .order-history-card.ready { border-left-color: #2ecc71; background: #e8f5e9; }
-        .order-history-card.approved { border-left-color: #3498db; background: #eaf2f8; }
         .status-badge { display: inline-block; padding: 4px 12px; border-radius: 30px; font-size: 12px; font-weight: 600; }
         .status-pending { background: #f39c12; color: white; }
         .status-approved { background: #3498db; color: white; }
@@ -63,7 +51,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, collection, addDoc, query, where, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, addDoc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyARhEin-GkSNftXo5AwJjGkYz0Jec1RwC8",
@@ -103,58 +91,16 @@
         let unsubscribeOrders = null;
         let restaurantOnline = true;
         let outOfStockItems = [];
-        let menuItems = []; // will be populated
+        let menuItems = [];
 
         function getEmailFromMobile(mobile) { return `${mobile}@khanakhazana.com`; }
-
-        // Fetch restaurant settings (online/offline + out of stock)
-        async function fetchRestaurantSettings() {
-            try {
-                const settingsRef = doc(db, "settings", "restaurantStatus");
-                const snap = await getDoc(settingsRef);
-                if (snap.exists()) {
-                    const data = snap.data();
-                    restaurantOnline = data.online === true;
-                    outOfStockItems = data.outOfStock || [];
-                } else {
-                    // Default settings if not exists
-                    await setDoc(settingsRef, { online: true, outOfStock: [] });
-                    restaurantOnline = true;
-                    outOfStockItems = [];
-                }
-                updateOfflineUI();
-            } catch(e) { console.error("Settings error", e); }
+        
+        // Check if email is valid customer email (10 digits @ domain)
+        function isValidCustomerEmail(email) {
+            return /^\d{10}@khanakhazana\.com$/.test(email);
         }
 
-        function updateOfflineUI() {
-            if (!restaurantOnline) {
-                offlineBanner.style.display = 'block';
-                if (placeOrderBtn) placeOrderBtn.disabled = true;
-                // Disable all quantity buttons
-                document.querySelectorAll('.qty-btn').forEach(btn => btn.disabled = true);
-            } else {
-                offlineBanner.style.display = 'none';
-                if (placeOrderBtn) placeOrderBtn.disabled = false;
-                document.querySelectorAll('.qty-btn').forEach(btn => btn.disabled = false);
-            }
-        }
-
-        // Listen to realtime settings changes
-        function subscribeToSettings() {
-            const settingsRef = doc(db, "settings", "restaurantStatus");
-            onSnapshot(settingsRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    restaurantOnline = data.online === true;
-                    outOfStockItems = data.outOfStock || [];
-                    updateOfflineUI();
-                    // Rebuild menu to reflect out-of-stock
-                    if (window.menuBuilt) buildMenuWithSelectors();
-                }
-            });
-        }
-
-        // Step 1: Check mobile
+        // Step 1: Check if mobile exists
         continueBtn.addEventListener('click', async () => {
             const mobile = mobileInput.value.trim();
             if (!mobile || !/^\d{10}$/.test(mobile)) {
@@ -163,7 +109,7 @@
                 return;
             }
             errorMsg.style.display = 'none';
-            currentMobile = mobile;
+            window.currentMobile = mobile;
             try {
                 const customerRef = doc(db, "customers", mobile);
                 const snap = await getDoc(customerRef);
@@ -180,27 +126,45 @@
             }
         });
 
+        // Login with password
         loginSubmitBtn.addEventListener('click', async () => {
             const password = loginPassword.value.trim();
             if (!password) { document.getElementById('loginError').innerText = "पासवर्ड डालें"; document.getElementById('loginError').style.display = 'block'; return; }
-            const email = getEmailFromMobile(currentMobile);
+            const email = getEmailFromMobile(window.currentMobile);
             try {
-                await signInWithEmailAndPassword(auth, email, password);
+                const userCred = await signInWithEmailAndPassword(auth, email, password);
+                // After login, check if email matches customer pattern
+                if (!isValidCustomerEmail(userCred.user.email)) {
+                    await signOut(auth);
+                    document.getElementById('loginError').innerText = "यह मैनेजर अकाउंट है। कृपया कस्टमर अकाउंट से लॉगिन करें।";
+                    document.getElementById('loginError').style.display = 'block';
+                    return;
+                }
+                // Success - auth state will trigger showOrderPage
             } catch(err) {
-                document.getElementById('loginError').innerText = "गलत पासवर्ड";
+                document.getElementById('loginError').innerText = "गलत पासवर्ड या खाता मौजूद नहीं";
                 document.getElementById('loginError').style.display = 'block';
             }
         });
 
+        // Signup
         signupSubmitBtn.addEventListener('click', async () => {
             const name = signupName.value.trim();
             const password = signupPassword.value.trim();
             if (!name || !password) { document.getElementById('signupError').innerText = "नाम और पासवर्ड दोनों भरें"; document.getElementById('signupError').style.display = 'block'; return; }
             if (password.length < 6) { document.getElementById('signupError').innerText = "पासवर्ड 6+ अक्षर"; document.getElementById('signupError').style.display = 'block'; return; }
-            const email = getEmailFromMobile(currentMobile);
+            const email = getEmailFromMobile(window.currentMobile);
             try {
                 const userCred = await createUserWithEmailAndPassword(auth, email, password);
-                await setDoc(doc(db, "customers", currentMobile), { name, mobile: currentMobile, email, createdAt: new Date().toISOString() });
+                // Create customer document with role
+                await setDoc(doc(db, "customers", window.currentMobile), {
+                    name: name,
+                    mobile: window.currentMobile,
+                    email: email,
+                    role: 'customer',
+                    createdAt: new Date().toISOString()
+                });
+                // Login success
             } catch(err) {
                 document.getElementById('signupError').innerText = err.message;
                 document.getElementById('signupError').style.display = 'block';
@@ -230,8 +194,57 @@
             mobileInput.value = '';
         });
 
+        // Fetch restaurant settings
+        async function fetchRestaurantSettings() {
+            try {
+                const settingsRef = doc(db, "settings", "restaurantStatus");
+                const snap = await getDoc(settingsRef);
+                if (snap.exists()) {
+                    const data = snap.data();
+                    restaurantOnline = data.online === true;
+                    outOfStockItems = data.outOfStock || [];
+                } else {
+                    await setDoc(settingsRef, { online: true, outOfStock: [] });
+                    restaurantOnline = true;
+                    outOfStockItems = [];
+                }
+                updateOfflineUI();
+            } catch(e) { console.error(e); }
+        }
+
+        function updateOfflineUI() {
+            if (!restaurantOnline) {
+                offlineBanner.style.display = 'block';
+                if (placeOrderBtn) placeOrderBtn.disabled = true;
+                document.querySelectorAll('.qty-btn').forEach(btn => btn.disabled = true);
+            } else {
+                offlineBanner.style.display = 'none';
+                if (placeOrderBtn) placeOrderBtn.disabled = false;
+                document.querySelectorAll('.qty-btn').forEach(btn => btn.disabled = false);
+            }
+        }
+
+        function subscribeToSettings() {
+            const settingsRef = doc(db, "settings", "restaurantStatus");
+            onSnapshot(settingsRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    restaurantOnline = data.online === true;
+                    outOfStockItems = data.outOfStock || [];
+                    updateOfflineUI();
+                    if (window.menuBuilt) buildMenuWithSelectors();
+                }
+            });
+        }
+
         onAuthStateChanged(auth, async (user) => {
             if (user) {
+                // Extra check: if somehow manager logged in, sign out
+                if (!isValidCustomerEmail(user.email)) {
+                    await signOut(auth);
+                    alert("मैनेजर अकाउंट कस्टमर पेज पर लॉगिन नहीं कर सकता।");
+                    return;
+                }
                 const email = user.email;
                 const mobile = email.split('@')[0];
                 const customerRef = doc(db, "customers", mobile);
@@ -239,6 +252,7 @@
                 if (snap.exists()) {
                     currentCustomer = { mobile, name: snap.data().name };
                 } else {
+                    // fallback - should not happen
                     currentCustomer = { mobile, name: mobile };
                 }
                 authContainer.style.display = 'none';
@@ -256,7 +270,7 @@
             }
         });
 
-        // ---------- Menu Data (Full 41 items) ----------
+        // ---------- Full Menu (41 items) ----------
         const fullMenu = [
             { name: "मटन बिरयानी", fullPrice: 210, halfPrice: 120, category: "बिरयानी और स्टार्टर" },
             { name: "चिकन दम बिरयानी", fullPrice: 130, halfPrice: 80, category: "बिरयानी और स्टार्टर" },
@@ -355,7 +369,6 @@
                 `;
                 container.appendChild(card);
             });
-            // Attach events only if online and not out of stock (buttons already exist but disabled by CSS if out of stock)
             document.querySelectorAll('.qty-btn.plus').forEach(btn => {
                 btn.removeEventListener('click', plusHandler);
                 btn.addEventListener('click', plusHandler);
@@ -366,7 +379,7 @@
             });
             function plusHandler(e) { const btn = e.currentTarget; changeQuantity(btn.dataset.item, btn.dataset.type, 1); }
             function minusHandler(e) { const btn = e.currentTarget; changeQuantity(btn.dataset.item, btn.dataset.type, -1); }
-            updateOfflineUI(); // re-apply disable if offline
+            updateOfflineUI();
         }
 
         function changeQuantity(itemName, type, delta) {
@@ -406,7 +419,7 @@
         }
 
         async function placeOrder() {
-            if (!restaurantOnline) { alert("रेस्टोरेंट अभी बंद है। कृपया बाद में प्रयास करें।"); return; }
+            if (!restaurantOnline) { alert("रेस्टोरेंट अभी बंद है।"); return; }
             if (cart.length === 0) { alert("कोई आइटम चुनें"); return; }
             const orderData = {
                 customerMobile: currentCustomer.mobile,
@@ -484,7 +497,7 @@
             <div class="logo"><h1>खाना खजाना</h1><p>सिंहवाड़ा (Pickup Only)</p></div>
             <div class="welcome-section"><span id="welcomeUser"></span><button id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
         </div>
-        <div id="offlineBanner" class="offline-banner" style="display:none;">⚠️ रेस्टोरेंट अभी बंद है। ऑर्डर नहीं लिए जा रहे हैं।</div>
+        <div id="offlineBanner" class="offline-banner" style="display:none;">⚠️ रेस्टोरेंट अभी बंद है।</div>
         <div id="menuGrid" class="menu-grid"></div>
         <div class="cart-section">
             <div class="cart-title"><i class="fas fa-shopping-cart"></i> आपका ऑर्डर</div>
