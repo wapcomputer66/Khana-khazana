@@ -14,6 +14,7 @@
             padding: 24px;
         }
         .container { max-width: 1400px; margin: 0 auto; }
+        /* Login Card */
         .login-card {
             max-width: 420px;
             margin: 100px auto;
@@ -37,7 +38,9 @@
             border-radius: 40px;
             border: none;
             font-weight: 600;
+            cursor: pointer;
         }
+        /* Dashboard Header */
         .dashboard-header {
             display: flex;
             justify-content: space-between;
@@ -46,17 +49,62 @@
             padding: 16px 28px;
             border-radius: 40px;
             margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
-        .sound-control { display: flex; gap: 12px; align-items: center; }
-        .enable-sound, .logout-dash {
+        .header-left h1 { font-size: 24px; color: #0f172a; }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .enable-sound {
+            background: #3b82f6;
+            color: white;
+            border: none;
             padding: 8px 20px;
             border-radius: 30px;
-            border: none;
             cursor: pointer;
             font-weight: 500;
         }
-        .enable-sound { background: #3b82f6; color: white; }
-        .logout-dash { background: #ef4444; color: white; }
+        .logout-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+        }
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            background: white;
+            border-radius: 60px;
+            padding: 6px;
+            margin-bottom: 30px;
+            width: fit-content;
+        }
+        .tab-btn {
+            padding: 12px 28px;
+            border-radius: 40px;
+            background: transparent;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .tab-btn.active {
+            background: #800000;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        /* Orders Grid */
         .orders-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -85,20 +133,95 @@
         }
         .order-card.approved { border-left-color: #3498db; }
         .order-card.ready { border-left-color: #2ecc71; background: #e8f5e9; }
-        .order-id { font-weight: 700; }
-        .customer-details { margin: 10px 0; color: #475569; }
-        .items-list { background: #f8fafc; border-radius: 16px; padding: 12px; margin: 12px 0; font-size: 14px; }
-        .total-amount { font-weight: 800; font-size: 18px; text-align: right; }
-        .action-buttons { display: flex; gap: 12px; margin-top: 15px; flex-wrap: wrap; }
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
         .approve-btn { background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 40px; cursor: pointer; }
         .reject-btn { background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 40px; cursor: pointer; }
         .ready-btn { background: #f59e0b; color: white; border: none; padding: 8px 16px; border-radius: 40px; cursor: pointer; }
-        @media (max-width: 1000px) { .orders-grid { grid-template-columns: 1fr; } }
+        /* Menu & Settings Tab */
+        .settings-panel {
+            background: white;
+            border-radius: 28px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        .online-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 24px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .online-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .online-badge {
+            font-weight: 700;
+            font-size: 18px;
+        }
+        .online-badge.online { color: #10b981; }
+        .online-badge.offline { color: #ef4444; }
+        .toggle-btn {
+            background: #800000;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .stock-section h3 {
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 5px;
+        }
+        .stock-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+            padding: 12px 18px;
+            border-radius: 60px;
+        }
+        .stock-item button {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .stock-item button.in-stock {
+            background: #10b981;
+        }
+        @media (max-width: 1000px) {
+            .orders-grid { grid-template-columns: 1fr; }
+            .header-right { flex-wrap: wrap; }
+        }
     </style>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, query, where, onSnapshot, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, query, where, onSnapshot, updateDoc, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyARhEin-GkSNftXo5AwJjGkYz0Jec1RwC8",
@@ -113,18 +236,46 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        // DOM elements
         const loginDiv = document.getElementById('loginSection');
         const dashboardDiv = document.getElementById('dashboardSection');
-        const pendingContainer = document.getElementById('pendingOrders');
-        const approvedContainer = document.getElementById('approvedOrders');
-        const readyContainer = document.getElementById('readyOrders');
         const loginBtn = document.getElementById('loginBtn');
         const logoutBtn = document.getElementById('logoutBtn');
         const enableSoundBtn = document.getElementById('enableSoundBtn');
         const soundStatus = document.getElementById('soundStatus');
-        let audioEnabled = false, audioContext = null;
+        
+        // Tabs
+        const tabOrdersBtn = document.getElementById('tabOrdersBtn');
+        const tabMenuBtn = document.getElementById('tabMenuBtn');
+        const tabOrders = document.getElementById('tabOrders');
+        const tabMenu = document.getElementById('tabMenu');
+        
+        // Orders containers
+        const pendingContainer = document.getElementById('pendingOrders');
+        const approvedContainer = document.getElementById('approvedOrders');
+        const readyContainer = document.getElementById('readyOrders');
+        
+        // Settings elements
+        const onlineToggleBtn = document.getElementById('onlineToggleBtn');
+        const onlineBadge = document.getElementById('onlineBadge');
+        const itemsListDiv = document.getElementById('itemsList');
+        
+        let audioEnabled = false;
+        let audioContext = null;
         let lastOrderIds = new Set();
-
+        let currentOnlineStatus = true;
+        let outOfStockItems = [];
+        
+        // Full menu list (41 items)
+        const fullMenu = [
+            "मटन बिरयानी","चिकन दम बिरयानी","चिकन फ्राई बिरयानी","अंडा बिरयानी","चिकन मनचुरीयन","चिकन चिल्ली","चिकन 65","चिकन तेल फ्राई","चिकन मसाला फ्राई",
+            "बटर चिकन","कढ़ाई चिकन","चिकन मसाला","चिकन दो प्याजा","अंडा कढ़ी","अंडा मसाला","मटन कढ़ी","चिकन फ्राई राइस","चिकन अंडा फ्राई राइस",
+            "चिकन थाली","आमलेट","शाही पनीर","पनीर प्याजा","पनीर मसाला","पनीर बटर मसाला","पनीर चिल्ली","मटर पनीर","कढ़ाई पनीर","पनीर फ्राई राईस",
+            "दाल फ्राई","आलु भुजिया","भेज मनचुरीयन","मनचुरीयन ग्रेवी","पनीर चिल्ली ड्राई","भेज 65","भेज चिल्ली","तवा रोटी","बटर रोटी",
+            "सादा चावल","चावल फ्राई","चावल थाली","स्पेशल चावल थाली"
+        ];
+        
+        // Sound functions
         function playBeep() {
             if (!audioEnabled) return;
             try {
@@ -140,13 +291,17 @@
                 gain.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.5);
                 osc.stop(audioContext.currentTime + 0.5);
                 if (audioContext.state === 'suspended') audioContext.resume();
-            } catch(e) {}
+            } catch(e) { console.warn(e); }
         }
+        
         function showNotification(orderId, name) {
             if (Notification.permission === "granted") {
                 new Notification("🍽️ नया ऑर्डर!", { body: `Order #${orderId.slice(-6)} from ${name}` });
-            } else if (Notification.permission !== "denied") Notification.requestPermission();
+            } else if (Notification.permission !== "denied") {
+                Notification.requestPermission();
+            }
         }
+        
         enableSoundBtn.addEventListener('click', () => {
             if (!audioEnabled) {
                 if (!audioContext) audioContext = new AudioContext();
@@ -155,33 +310,108 @@
                     soundStatus.innerText = "✅ Sound active";
                     enableSoundBtn.style.display = "none";
                     playBeep();
-                });
+                }).catch(() => {});
             }
         });
+        
+        // Login
         loginBtn.addEventListener('click', () => {
             const email = document.getElementById('managerEmail').value;
             const pass = document.getElementById('managerPassword').value;
             signInWithEmailAndPassword(auth, email, pass).catch(() => alert("Invalid login"));
         });
+        
         logoutBtn.addEventListener('click', () => signOut(auth));
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                loginDiv.style.display = 'none';
-                dashboardDiv.style.display = 'block';
-                loadOrders();
+        
+        // Load restaurant settings from Firestore
+        async function loadSettings() {
+            const settingsRef = doc(db, "settings", "restaurantStatus");
+            const snap = await getDoc(settingsRef);
+            if (snap.exists()) {
+                const data = snap.data();
+                currentOnlineStatus = data.online === true;
+                outOfStockItems = data.outOfStock || [];
             } else {
-                dashboardDiv.style.display = 'none';
-                loginDiv.style.display = 'block';
-                audioEnabled = false; if(audioContext) audioContext.close(); audioContext=null;
-                soundStatus.innerText = "🔊 Enable sound";
-                enableSoundBtn.style.display = "inline-block";
+                // Default settings
+                await setDoc(settingsRef, { online: true, outOfStock: [] });
+                currentOnlineStatus = true;
+                outOfStockItems = [];
             }
+            updateOnlineUI();
+            renderStockList();
+        }
+        
+        function updateOnlineUI() {
+            if (currentOnlineStatus) {
+                onlineBadge.innerText = "🟢 Online (Accepting Orders)";
+                onlineBadge.className = "online-badge online";
+                onlineToggleBtn.innerText = "Go Offline";
+            } else {
+                onlineBadge.innerText = "🔴 Offline (Not Accepting Orders)";
+                onlineBadge.className = "online-badge offline";
+                onlineToggleBtn.innerText = "Go Online";
+            }
+        }
+        
+        async function toggleOnline() {
+            const settingsRef = doc(db, "settings", "restaurantStatus");
+            const newStatus = !currentOnlineStatus;
+            await setDoc(settingsRef, { online: newStatus, outOfStock: outOfStockItems }, { merge: true });
+            currentOnlineStatus = newStatus;
+            updateOnlineUI();
+        }
+        
+        async function toggleStock(itemName) {
+            let newOutOfStock;
+            if (outOfStockItems.includes(itemName)) {
+                newOutOfStock = outOfStockItems.filter(i => i !== itemName);
+            } else {
+                newOutOfStock = [...outOfStockItems, itemName];
+            }
+            const settingsRef = doc(db, "settings", "restaurantStatus");
+            await setDoc(settingsRef, { online: currentOnlineStatus, outOfStock: newOutOfStock }, { merge: true });
+            outOfStockItems = newOutOfStock;
+            renderStockList();
+        }
+        
+        function renderStockList() {
+            itemsListDiv.innerHTML = '';
+            fullMenu.forEach(item => {
+                const isOut = outOfStockItems.includes(item);
+                const btnText = isOut ? '✅ In Stock' : '❌ Out of Stock';
+                const btnClass = isOut ? 'in-stock' : '';
+                const div = document.createElement('div');
+                div.className = 'stock-item';
+                div.innerHTML = `<span>${item}</span><button class="${btnClass}" data-item="${item}">${btnText}</button>`;
+                div.querySelector('button').addEventListener('click', () => toggleStock(item));
+                itemsListDiv.appendChild(div);
+            });
+        }
+        
+        onlineToggleBtn.addEventListener('click', toggleOnline);
+        
+        // Tab switching
+        tabOrdersBtn.addEventListener('click', () => {
+            tabOrdersBtn.classList.add('active');
+            tabMenuBtn.classList.remove('active');
+            tabOrders.classList.add('active');
+            tabMenu.classList.remove('active');
         });
-        let unsub;
+        tabMenuBtn.addEventListener('click', () => {
+            tabMenuBtn.classList.add('active');
+            tabOrdersBtn.classList.remove('active');
+            tabMenu.classList.add('active');
+            tabOrders.classList.remove('active');
+            // Refresh stock list when tab opened
+            renderStockList();
+        });
+        
+        // Real-time orders
+        let unsubOrders = null;
         function loadOrders() {
-            if (unsub) unsub();
+            if (unsubOrders) unsubOrders();
             const q = query(collection(db, "orders"));
-            unsub = onSnapshot(q, (snapshot) => {
+            unsubOrders = onSnapshot(q, (snapshot) => {
                 const pending = [], approved = [], ready = [];
                 snapshot.forEach(docSnap => {
                     const order = docSnap.data();
@@ -190,7 +420,7 @@
                     else if (order.status === 'approved') approved.push(order);
                     else if (order.status === 'ready') ready.push(order);
                 });
-                // Sound for new pending orders
+                // New order sound
                 const newPendingIds = pending.map(o => o.id);
                 for (let id of newPendingIds) {
                     if (!lastOrderIds.has(id)) {
@@ -202,15 +432,17 @@
                 renderOrders(pending, approved, ready);
             });
         }
+        
         function renderOrders(pending, approved, ready) {
             pendingContainer.innerHTML = pending.map(order => createOrderCard(order, 'pending')).join('');
             approvedContainer.innerHTML = approved.map(order => createOrderCard(order, 'approved')).join('');
             readyContainer.innerHTML = ready.map(order => createOrderCard(order, 'ready')).join('');
-            // Attach events dynamically
+            // Attach events
             document.querySelectorAll('.approve-btn').forEach(btn => btn.addEventListener('click', () => updateStatus(btn.dataset.id, 'approved')));
             document.querySelectorAll('.reject-btn').forEach(btn => btn.addEventListener('click', () => updateStatus(btn.dataset.id, 'rejected')));
             document.querySelectorAll('.ready-btn').forEach(btn => btn.addEventListener('click', () => updateStatus(btn.dataset.id, 'ready')));
         }
+        
         function createOrderCard(order, stage) {
             const itemsHtml = order.items.map(i => `<li>${i.name} (${i.type}) x${i.qty} = ₹${i.itemTotal}</li>`).join('');
             let actions = '';
@@ -221,19 +453,48 @@
             } else {
                 actions = `<div style="margin-top:12px;"><i class="fas fa-check-circle"></i> Customer can pickup now</div>`;
             }
-            return `
-                <div class="order-card ${order.status}">
-                    <div class="order-id"><i class="fas fa-receipt"></i> Order #${order.id.slice(-6)} | ${new Date(order.createdAt).toLocaleString()}</div>
-                    <div class="customer-details"><i class="fas fa-user"></i> ${order.customerName} (${order.customerMobile})</div>
-                    <div class="items-list"><ul style="margin-left:20px;">${itemsHtml}</ul></div>
-                    <div class="total-amount">₹${order.total}</div>
-                    ${actions}
-                </div>
-            `;
+            return `<div class="order-card ${order.status}">
+                <div><strong>Order #${order.id.slice(-6)}</strong> | ${new Date(order.createdAt).toLocaleString()}</div>
+                <div><strong>Customer:</strong> ${order.customerName} (${order.customerMobile})</div>
+                <div><strong>Items:</strong><ul style="margin-left:20px;">${itemsHtml}</ul></div>
+                <div style="text-align:right; font-weight:bold;">₹${order.total}</div>
+                ${actions}
+            </div>`;
         }
+        
         async function updateStatus(orderId, newStatus) {
             await updateDoc(doc(db, "orders", orderId), { status: newStatus });
         }
+        
+        // Auth state
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                loginDiv.style.display = 'none';
+                dashboardDiv.style.display = 'block';
+                await loadSettings();
+                loadOrders();
+                // Real-time settings listener for out of stock & online status changes (from other sessions)
+                const settingsRef = doc(db, "settings", "restaurantStatus");
+                onSnapshot(settingsRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        currentOnlineStatus = data.online === true;
+                        outOfStockItems = data.outOfStock || [];
+                        updateOnlineUI();
+                        renderStockList();
+                    }
+                });
+            } else {
+                dashboardDiv.style.display = 'none';
+                loginDiv.style.display = 'block';
+                audioEnabled = false;
+                if (audioContext) audioContext.close();
+                audioContext = null;
+                soundStatus.innerText = "🔊 Enable sound";
+                enableSoundBtn.style.display = "inline-block";
+                if (unsubOrders) unsubOrders();
+            }
+        });
     </script>
 </head>
 <body>
@@ -246,25 +507,54 @@
     </div>
     <div id="dashboardSection" style="display:none;">
         <div class="dashboard-header">
-            <h1><i class="fas fa-utensils"></i> खाना खजाना Manager</h1>
-            <div class="sound-control">
-                <span id="soundStatus">🔊 Enable sound</span>
-                <button id="enableSoundBtn" class="enable-sound"><i class="fas fa-volume-up"></i> Enable</button>
-                <button id="logoutBtn" class="logout-dash"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            <div class="header-left">
+                <h1><i class="fas fa-utensils"></i> खाना खजाना Manager</h1>
+            </div>
+            <div class="header-right">
+                <button id="enableSoundBtn" class="enable-sound">🔊 Enable Sound</button>
+                <span id="soundStatus" style="font-size:14px;"></span>
+                <button id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
             </div>
         </div>
-        <div class="orders-grid">
-            <div class="order-column">
-                <div class="column-title"><i class="fas fa-clock"></i> Pending Orders</div>
-                <div id="pendingOrders"></div>
+        
+        <!-- Tabs -->
+        <div class="tabs">
+            <button id="tabOrdersBtn" class="tab-btn active">📦 Orders</button>
+            <button id="tabMenuBtn" class="tab-btn">🍽️ Menu & Settings</button>
+        </div>
+        
+        <!-- Tab 1: Orders -->
+        <div id="tabOrders" class="tab-content active">
+            <div class="orders-grid">
+                <div class="order-column">
+                    <div class="column-title">⏳ Pending Orders</div>
+                    <div id="pendingOrders"></div>
+                </div>
+                <div class="order-column">
+                    <div class="column-title">🍳 Approved (Cooking)</div>
+                    <div id="approvedOrders"></div>
+                </div>
+                <div class="order-column">
+                    <div class="column-title">✅ Ready for Pickup</div>
+                    <div id="readyOrders"></div>
+                </div>
             </div>
-            <div class="order-column">
-                <div class="column-title"><i class="fas fa-spinner"></i> Approved (Cooking)</div>
-                <div id="approvedOrders"></div>
-            </div>
-            <div class="order-column">
-                <div class="column-title"><i class="fas fa-check-double"></i> Ready for Pickup</div>
-                <div id="readyOrders"></div>
+        </div>
+        
+        <!-- Tab 2: Menu & Settings -->
+        <div id="tabMenu" class="tab-content">
+            <div class="settings-panel">
+                <div class="online-toggle">
+                    <div class="online-status">
+                        <i class="fas fa-globe" style="font-size:24px;"></i>
+                        <span id="onlineBadge" class="online-badge online">🟢 Online</span>
+                    </div>
+                    <button id="onlineToggleBtn" class="toggle-btn">Go Offline</button>
+                </div>
+                <div class="stock-section">
+                    <h3><i class="fas fa-boxes"></i> Manage Stock (Out of Stock Items)</h3>
+                    <div id="itemsList" class="items-grid"></div>
+                </div>
             </div>
         </div>
     </div>
