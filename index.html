@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>खाना खजाना फैमिली रेस्टोरेन्ट - ऑर्डर करें</title>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyARhEin-GkSNftXo5AwJjGkYz0Jec1RwC8",
+            authDomain: "khana-khazana-b9ab9.firebaseapp.com",
+            projectId: "khana-khazana-b9ab9",
+            storageBucket: "khana-khazana-b9ab9.firebasestorage.app",
+            messagingSenderId: "439774060344",
+            appId: "1:439774060344:web:4ad0fe0378a26d33b2abcd",
+            measurementId: "G-45MJLVWF75"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        window.db = db;
+
+        // DOM elements
+        const authContainer = document.getElementById('authContainer');
+        const orderContainer = document.getElementById('orderContainer');
+        const loginBtn = document.getElementById('loginBtn');
+        const mobileInput = document.getElementById('mobile');
+        const nameInput = document.getElementById('fullname');
+        const authError = document.getElementById('authError');
+        const welcomeUser = document.getElementById('welcomeUser');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        let currentCustomer = null;
+
+        loginBtn.addEventListener('click', async () => {
+            const mobile = mobileInput.value.trim();
+            const name = nameInput.value.trim();
+            if (!mobile || !name) {
+                authError.innerText = "कृपया मोबाइल नंबर और नाम दोनों भरें।";
+                authError.style.display = 'block';
+                return;
+            }
+            if (!/^\d{10}$/.test(mobile)) {
+                authError.innerText = "मोबाइल नंबर 10 अंकों का होना चाहिए।";
+                authError.style.display = 'block';
+                return;
+            }
+            authError.style.display = 'none';
+            try {
+                const customerRef = doc(db, "customers", mobile);
+                const customerSnap = await getDoc(customerRef);
+                if (!customerSnap.exists()) {
+                    await setDoc(customerRef, { name, mobile, createdAt: new Date().toISOString(), orderCount: 0 });
+                } else {
+                    const existingName = customerSnap.data().name;
+                    if (existingName !== name) await setDoc(customerRef, { name }, { merge: true });
+                }
+                currentCustomer = { mobile, name };
+                localStorage.setItem('khanaCustomer', JSON.stringify(currentCustomer));
+                showOrderPage();
+            } catch (err) {
+                console.error(err);
+                authError.innerText = "सर्वर त्रुटि। कृपया बाद में प्रयास करें।";
+                authError.style.display = 'block';
+            }
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('khanaCustomer');
+            currentCustomer = null;
+            orderContainer.style.display = 'none';
+            authContainer.style.display = 'block';
+            mobileInput.value = '';
+            nameInput.value = '';
+        });
+
+        function checkAutoLogin() {
+            const saved = localStorage.getItem('khanaCustomer');
+            if (saved) {
+                try { currentCustomer = JSON.parse(saved); showOrderPage(); } catch(e) {}
+            }
+        }
+
+        function showOrderPage() {
+            authContainer.style.display = 'none';
+            orderContainer.style.display = 'block';
+            welcomeUser.innerText = `स्वागत है, ${currentCustomer.name} (${currentCustomer.mobile})`;
+            initOrderSystem();
+        }
+
+        // ---------- Complete Menu (41 items from your HTML) ----------
+        const menuItems = [
+            { name: "मटन बिरयानी", fullPrice: 210, halfPrice: 120, category: "बिरयानी और स्टार्टर" },
+            { name: "चिकन दम बिरयानी", fullPrice: 130, halfPrice: 80, category: "बिरयानी और स्टार्टर" },
+            { name: "चिकन फ्राई बिरयानी", fullPrice: 140, halfPrice: 85, category: "बिरयानी और स्टार्टर" },
+            { name: "अंडा बिरयानी", fullPrice: 110, halfPrice: 80, category: "बिरयानी और स्टार्टर" },
+            { name: "चिकन मनचुरीयन", fullPrice: 150, halfPrice: 85, category: "बिरयानी और स्टार्टर" },
+            { name: "चिकन चिल्ली", fullPrice: 170, halfPrice: 95, category: "बिरयानी और स्टार्टर" },
+            { name: "चिकन 65", fullPrice: 160, halfPrice: 90, category: "बिरयानी और स्टार्टर" },
+            { name: "चिकन तेल फ्राई", fullPrice: 170, halfPrice: 95, category: "बिरयानी और स्टार्टर" },
+            { name: "चिकन मसाला फ्राई", fullPrice: 160, halfPrice: 90, category: "बिरयानी और स्टार्टर" },
+            { name: "बटर चिकन", fullPrice: 170, halfPrice: 95, category: "नॉन-वेज" },
+            { name: "कढ़ाई चिकन", fullPrice: 170, halfPrice: 95, category: "नॉन-वेज" },
+            { name: "चिकन मसाला", fullPrice: 160, halfPrice: 90, category: "नॉन-वेज" },
+            { name: "चिकन दो प्याजा", fullPrice: 160, halfPrice: 90, category: "नॉन-वेज" },
+            { name: "अंडा कढ़ी", fullPrice: 110, halfPrice: 80, category: "नॉन-वेज" },
+            { name: "अंडा मसाला", fullPrice: 110, halfPrice: 80, category: "नॉन-वेज" },
+            { name: "मटन कढ़ी", fullPrice: 200, halfPrice: 110, category: "नॉन-वेज" },
+            { name: "चिकन फ्राई राइस", fullPrice: 130, halfPrice: 80, category: "नॉन-वेज" },
+            { name: "चिकन अंडा फ्राई राइस", fullPrice: 140, halfPrice: 85, category: "नॉन-वेज" },
+            { name: "चिकन थाली", fullPrice: 120, halfPrice: null, category: "नॉन-वेज" },
+            { name: "आमलेट", fullPrice: 50, halfPrice: 35, category: "नॉन-वेज" },
+            { name: "शाही पनीर", fullPrice: 170, halfPrice: 95, category: "भेज (Veg)" },
+            { name: "पनीर प्याजा", fullPrice: 160, halfPrice: 90, category: "भेज (Veg)" },
+            { name: "पनीर मसाला", fullPrice: 160, halfPrice: 90, category: "भेज (Veg)" },
+            { name: "पनीर बटर मसाला", fullPrice: 170, halfPrice: 95, category: "भेज (Veg)" },
+            { name: "पनीर चिल्ली", fullPrice: 180, halfPrice: 100, category: "भेज (Veg)" },
+            { name: "मटर पनीर", fullPrice: 130, halfPrice: null, category: "भेज (Veg)" },
+            { name: "कढ़ाई पनीर", fullPrice: 170, halfPrice: 95, category: "भेज (Veg)" },
+            { name: "पनीर फ्राई राईस", fullPrice: 150, halfPrice: 80, category: "भेज (Veg)" },
+            { name: "दाल फ्राई", fullPrice: 80, halfPrice: null, category: "भेज (Veg)" },
+            { name: "आलु भुजिया", fullPrice: 80, halfPrice: null, category: "भेज (Veg)" },
+            { name: "भेज मनचुरीयन", fullPrice: 120, halfPrice: 70, category: "भेज (Veg)" },
+            { name: "मनचुरीयन ग्रेवी", fullPrice: 130, halfPrice: 75, category: "भेज (Veg)" },
+            { name: "पनीर चिल्ली ड्राई", fullPrice: 170, halfPrice: 95, category: "भेज (Veg)" },
+            { name: "भेज 65", fullPrice: 130, halfPrice: 80, category: "भेज (Veg)" },
+            { name: "भेज चिल्ली", fullPrice: 130, halfPrice: 80, category: "भेज (Veg)" },
+            { name: "तवा रोटी", fullPrice: 7, halfPrice: null, category: "रोटी और चावल", unit: "pc" },
+            { name: "बटर रोटी", fullPrice: 10, halfPrice: null, category: "रोटी और चावल", unit: "pc" },
+            { name: "सादा चावल", fullPrice: 40, halfPrice: 20, category: "रोटी और चावल" },
+            { name: "चावल फ्राई", fullPrice: 60, halfPrice: 30, category: "रोटी और चावल" },
+            { name: "चावल थाली", fullPrice: 70, halfPrice: null, category: "रोटी और चावल" },
+            { name: "स्पेशल चावल थाली", fullPrice: 90, halfPrice: null, category: "रोटी और चावल" }
+        ];
+
+        function initOrderSystem() {
+            buildMenu();
+            attachEvents();
+            document.getElementById('placeOrderBtn').addEventListener('click', placeOrder);
+        }
+
+        function buildMenu() {
+            let currentCat = "";
+            let html = '<table id="menuTable"><thead><tr><th>आइटम</th><th>फुल (₹)</th><th>हाफ (₹)</th><th>Full मात्रा</th><th>Half मात्रा</th></tr></thead><tbody>';
+            menuItems.forEach(item => {
+                if (item.category !== currentCat) {
+                    currentCat = item.category;
+                    html += `<tr class="cat"><td colspan="5">${currentCat}</td></tr>`;
+                }
+                html += `<tr>
+                    <td>${item.name}</td>
+                    <td class="p-center">${item.fullPrice}${item.unit ? `/${item.unit}` : ''}</td>
+                    <td class="p-center">${item.halfPrice ? item.halfPrice : '—'}</td>
+                    <td><input type="number" min="0" value="0" class="qty-full" data-name="${item.name}" data-price="${item.fullPrice}" data-type="full"></td>
+                    <td><input type="number" min="0" value="0" class="qty-half" data-name="${item.name}" data-price="${item.halfPrice || 0}" data-type="half" ${!item.halfPrice ? 'disabled' : ''}></td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            document.getElementById('menuContainer').innerHTML = html;
+        }
+
+        function attachEvents() {
+            document.querySelectorAll('.qty-full, .qty-half').forEach(inp => {
+                inp.addEventListener('input', updateCart);
+            });
+            updateCart();
+        }
+
+        let cart = [];
+        function updateCart() {
+            cart = [];
+            let total = 0;
+            document.querySelectorAll('.qty-full').forEach(inp => {
+                let qty = parseInt(inp.value);
+                if (qty > 0) {
+                    let name = inp.dataset.name;
+                    let price = parseFloat(inp.dataset.price);
+                    let itemTotal = qty * price;
+                    total += itemTotal;
+                    cart.push({ name, type: "Full", qty, price, itemTotal });
+                }
+            });
+            document.querySelectorAll('.qty-half').forEach(inp => {
+                let qty = parseInt(inp.value);
+                if (qty > 0 && inp.dataset.price != 0) {
+                    let name = inp.dataset.name;
+                    let price = parseFloat(inp.dataset.price);
+                    let itemTotal = qty * price;
+                    total += itemTotal;
+                    cart.push({ name, type: "Half", qty, price, itemTotal });
+                }
+            });
+            const cartDiv = document.getElementById('cartItems');
+            if (cart.length === 0) cartDiv.innerHTML = '<p>कोई आइटम नहीं चुना</p>';
+            else {
+                let html = '<ul>';
+                cart.forEach(i => html += `<li>${i.name} (${i.type}) x${i.qty} = ₹${i.itemTotal}</li>`);
+                html += '</ul>';
+                cartDiv.innerHTML = html;
+            }
+            document.getElementById('totalPrice').innerText = total;
+        }
+
+        async function placeOrder() {
+            if (cart.length === 0) { alert("कृपया कोई आइटम चुनें।"); return; }
+            const address = document.getElementById('custAddress').value.trim();
+            if (!address) { alert("कृपया पता भरें।"); return; }
+            const orderData = {
+                customerMobile: currentCustomer.mobile,
+                customerName: currentCustomer.name,
+                customerAddress: address,
+                items: cart,
+                total: parseFloat(document.getElementById('totalPrice').innerText),
+                status: "pending",
+                createdAt: new Date().toISOString()
+            };
+            try {
+                await addDoc(collection(db, "orders"), orderData);
+                alert("✅ ऑर्डर सफलतापूर्वक भेज दिया गया! मैनेजर अप्रूवल का इंतज़ार करें।");
+                document.querySelectorAll('.qty-full, .qty-half').forEach(inp => inp.value = 0);
+                document.getElementById('custAddress').value = '';
+                updateCart();
+            } catch(err) {
+                console.error(err);
+                alert("❌ ऑर्डर भेजने में त्रुटि। कृपया बाद में प्रयास करें।");
+            }
+        }
+
+        checkAutoLogin();
+    </script>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #fffaf0; margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .auth-box { max-width: 400px; margin: 80px auto; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; }
+        input, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
+        button { background: #800000; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.2s; }
+        button:hover { background: #a00000; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; vertical-align: middle; }
+        th { background: #800000; color: white; }
+        .cat { background: #f2dede; font-weight: bold; text-align: center; }
+        .qty-full, .qty-half { width: 80px; padding: 6px; text-align: center; }
+        .cart-summary { margin-top: 25px; border-top: 2px solid #800000; padding-top: 15px; }
+        #logoutBtn { background: #555; margin-bottom: 20px; }
+        .welcome-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+        @media (max-width: 768px) {
+            table, thead, tbody, th, td, tr { display: block; }
+            th { display: none; }
+            td { display: flex; justify-content: space-between; align-items: center; border: none; border-bottom: 1px solid #eee; }
+            td:before { content: attr(data-label); font-weight: bold; width: 40%; }
+            .qty-full, .qty-half { width: 70px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="authContainer" class="auth-box">
+        <h2>🍽️ खाना खजाना</h2>
+        <p>ऑर्डर करने के लिए साइनअप करें</p>
+        <input type="text" id="mobile" placeholder="मोबाइल नंबर (10 अंक)" maxlength="10">
+        <input type="text" id="fullname" placeholder="पूरा नाम">
+        <button id="loginBtn">लॉगिन / साइनअप</button>
+        <p id="authError" style="color:red; display:none; margin-top:10px;"></p>
+    </div>
+    <div id="orderContainer" style="display:none;">
+        <div class="container">
+            <h1 style="color:#800000; text-align:center;">🍽️ खाना खजाना फैमिली रेस्टोरेन्ट</h1>
+            <p style="text-align:center; color:#555;">मेन रोड, सिंहवाड़ा</p>
+            <div class="welcome-bar">
+                <span id="welcomeUser" style="font-weight: bold;"></span>
+                <button id="logoutBtn">लॉगआउट</button>
+            </div>
+            <div id="menuContainer"></div>
+            <div class="cart-summary">
+                <h3>🛒 आपका ऑर्डर</h3>
+                <div id="cartItems"></div>
+                <p><strong>कुल: ₹<span id="totalPrice">0</span></strong></p>
+            </div>
+            <div style="margin-top: 20px;">
+                <textarea id="custAddress" rows="3" placeholder="पता (मकान नंबर, गली, शहर) *" required></textarea>
+                <button id="placeOrderBtn" style="width:100%; margin-top:15px;">✅ ऑर्डर करें</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
